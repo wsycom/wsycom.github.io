@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三阶幻方填图教学课件</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --highlight-color: #ff9800;
+            --grid-border: #ff9800;
+            --sum-bg: #f0f4f8;
+            --sum-color: #1a237e;
+            --grid-bg: #1a237e;
+            --cell-size: 90px;
+            --sum-h: 67.5px;
+            /* 右侧格子宽度：原90px缩小1/4 => 67.5px */
+            --sum-w-side: 67.5px; 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #e8f0fe 0%, #f5f7fa 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 30px 20px;
+            user-select: none;
+        }
+
+        .container {
+            background: white;
+            padding: 30px 40px 40px;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        h1 { color: #333; margin-bottom: 6px; font-size: 26px; }
+        .instruction { color: #888; margin-bottom: 20px; font-size: 14px; }
+
+        .input-area { margin-bottom: 10px; display: flex; justify-content: center; gap: 10px; }
+        .input-area input {
+            width: 320px; padding: 10px 15px;
+            border: 2px solid #ddd; border-radius: 8px;
+            font-size: 16px; outline: none; transition: border-color 0.3s;
+        }
+        .input-area input:focus { border-color: var(--primary-color); }
+        .input-area button {
+            padding: 10px 24px; background: var(--primary-color);
+            color: white; border: none; border-radius: 8px;
+            cursor: pointer; font-size: 16px; transition: background 0.3s;
+        }
+        .input-area button:hover { background: #357abd; }
+        .error-msg { color: #e74c3c; font-size: 13px; min-height: 20px; margin-bottom: 10px; }
+
+        .game-wrapper { display: none; margin: 20px auto 0; }
+
+        /* ===== 布局网格：5列 x 4行 ===== */
+        .layout-grid {
+            display: grid;
+            /* 列宽：左对角线 | 九宫格3列 | 右行和(变窄) */
+            grid-template-columns: var(--cell-size) var(--cell-size) var(--cell-size) var(--cell-size) var(--sum-w-side);
+            /* 行高：九宫格3行 | 底部求和行(变矮) */
+            grid-template-rows: var(--cell-size) var(--cell-size) var(--cell-size) var(--sum-h);
+            justify-content: center;
+            gap: 0;
+        }
+
+        /* 九宫格居中：第2-4列，第1-3行 */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, var(--cell-size));
+            grid-template-rows: repeat(3, var(--cell-size));
+            grid-column: 2 / 5;
+            grid-row: 1 / 4;
+            border: 4px solid var(--grid-border);
+            position: relative;
+            overflow: hidden;
+            background: var(--grid-bg);
+            border-radius: 4px;
+            z-index: 2;
+        }
+
+        .cell {
+            width: var(--cell-size); height: var(--cell-size);
+            border: 1.5px solid rgba(255,255,255,0.25);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; font-weight: bold; color: #fff;
+            background: transparent; cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            position: relative; z-index: 2;
+            text-shadow: 0 0 8px rgba(255,255,255,0.5);
+            line-height: 1;
+        }
+        .cell:hover { background: rgba(255,255,255,0.12); }
+        .cell.selected-target {
+            background: rgba(255,255,255,0.18);
+            box-shadow: inset 0 0 0 3px rgba(255,200,50,0.7);
+        }
+
+        /* ===== 星星与流星动画 ===== */
+        .star {
+            position: absolute; border-radius: 50%; background: #fff;
+            z-index: 1; pointer-events: none;
+            animation: twinkle var(--dur) ease-in-out infinite alternate;
+            animation-delay: var(--delay);
+        }
+        @keyframes twinkle {
+            0%   { opacity: 0; transform: scale(0.3); }
+            40%  { opacity: 1; transform: scale(1); }
+            60%  { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 0.15; transform: scale(0.4); }
+        }
+
+        /* ===== Canvas 彗星背景（与动态对比.html一致） ===== */
+        #bg-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        /* ===== 求和格子通用样式 ===== */
+        .sum-item {
+            display: flex; align-items: center; justify-content: center;
+            background: var(--sum-bg); border: 1.5px solid #ddd;
+            font-size: 16px; font-weight: bold; color: var(--sum-color);
+        }
+
+        /* 1. 左下格子：右上→左下对角线 (第1列，第4行) */
+        .sum-anti-diag { 
+            grid-column: 1; 
+            grid-row: 4; 
+            width: var(--cell-size); 
+            height: var(--sum-h); 
+        }
+
+        /* 2. 右下格子：左上→右下对角线 (第5列，第4行) */
+        .sum-main-diag { 
+            grid-column: 5; 
+            grid-row: 4; 
+            width: var(--sum-w-side); 
+            height: var(--sum-h); 
+        }
+
+        /* 3. 底部列和：第2-4列，第4行 */
+        .sum-col-0 { grid-column: 2; grid-row: 4; width: var(--cell-size); height: var(--sum-h); }
+        .sum-col-1 { grid-column: 3; grid-row: 4; width: var(--cell-size); height: var(--sum-h); }
+        .sum-col-2 { grid-column: 4; grid-row: 4; width: var(--cell-size); height: var(--sum-h); }
+
+        /* 4. 右侧行和：第5列，第1-3行 (宽度缩小，高度保持cell-size即相对扩大) */
+        .sum-row-0 { grid-column: 5; grid-row: 1; width: var(--sum-w-side); height: var(--cell-size); }
+        .sum-row-1 { grid-column: 5; grid-row: 2; width: var(--sum-w-side); height: var(--cell-size); }
+        .sum-row-2 { grid-column: 5; grid-row: 3; width: var(--sum-w-side); height: var(--cell-size); }
+
+        /* ===== 待选数字方块区 ===== */
+        .number-pool {
+            margin-top: 28px; display: flex; justify-content: center;
+            gap: 10px; flex-wrap: wrap; min-height: 50px;
+            padding: 10px; border: 2px dashed #ddd;
+            border-radius: 10px; background: #fafbfc;
+        }
+        .number-block {
+            width: 52px; height: 52px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; font-weight: bold; color: white;
+            background: var(--highlight-color); border-radius: 8px;
+            cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 2px 8px rgba(255,152,0,0.3);
+        }
+        .number-block:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(255,152,0,0.45); }
+        .number-block.selected {
+            background: #e65100;
+            box-shadow: 0 0 0 3px #ff9800, 0 4px 14px rgba(255,152,0,0.6);
+            transform: scale(1.1);
+        }
+
+        .success-msg { margin-top: 18px; color: #27ae60; font-weight: bold; font-size: 20px; display: none; }
+        .hint-text   { margin-top: 16px; font-size: 13px; color: #aaa; }
+        .btn-area    { margin-top: 18px; display: flex; justify-content: center; gap: 12px; align-items: center; }
+        .btn-practice {
+            padding: 10px 28px; background: #1a237e; color: white;
+            border: none; border-radius: 8px; cursor: pointer;
+            font-size: 16px; font-weight: bold; transition: background 0.3s;
+        }
+        .btn-practice:hover { background: #283593; }
+
+        /* ===== 红色方印（紧凑版，9号字） ===== */
+        .red-seal {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 4px; /* 极小内边距，紧贴文字 */
+            border: 2px solid #c0392b;
+            border-radius: 2px;
+            color: #c0392b;
+            font-size: 9pt; /* 9号字 */
+            font-weight: bold;
+            font-family: 'KaiTi', 'STKaiti', 'SimSun', serif;
+            line-height: 1.1;
+            transform: rotate(-5deg);
+            box-shadow: inset 0 0 0 1px #c0392b;
+            margin-left: 16px;
+            opacity: 0.9;
+            user-select: none;
+        }
+
+        /* ===== 手机端自适应 ===== */
+        @media (max-width: 500px) {
+            :root {
+                --cell-size: 62px;
+                --sum-h: 46.5px;
+                --sum-w-side: 47px;
+            }
+            body { padding: 12px 8px; }
+            .container { padding: 16px 12px 20px; border-radius: 10px; }
+            h1 { font-size: 18px; }
+            .instruction { font-size: 11px; margin-bottom: 12px; }
+            .input-area { flex-direction: column; align-items: center; }
+            .input-area input { width: 100%; max-width: 280px; font-size: 14px; padding: 8px 12px; }
+            .input-area button { width: 100%; max-width: 280px; font-size: 14px; padding: 8px; }
+            .cell { font-size: 20px; }
+            .sum-item { font-size: 12px; }
+            .number-block { width: 38px; height: 38px; font-size: 16px; }
+            .number-pool { gap: 6px; padding: 8px; margin-top: 16px; }
+            .hint-text { font-size: 11px; }
+            .success-msg { font-size: 16px; }
+            .btn-practice { padding: 8px 20px; font-size: 14px; }
+            .red-seal { font-size: 7pt; margin-left: 8px; }
+        }
+        @media (max-width: 380px) {
+            :root {
+                --cell-size: 50px;
+                --sum-h: 37.5px;
+                --sum-w-side: 38px;
+            }
+            .cell { font-size: 16px; }
+            .sum-item { font-size: 10px; }
+        }
+    </style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<div class="container">
+    <h1><svg width="28" height="28" viewBox="0 0 28 28" style="vertical-align:middle;margin-right:4px;"><path d="M14 2L26 9V22L14 28L2 22V9L14 2Z" fill="none" stroke="#1a237e" stroke-width="1.5" stroke-linejoin="round"/><path d="M14 2L14 28M2 9L14 14L26 9M2 22L14 14" fill="none" stroke="#1a237e" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 5.5L21 12.5M7 17.5L21 24.5" fill="none" stroke="#4a90e2" stroke-width="1" opacity="0.5"/></svg> 三阶幻方填图</h1>
+    <p class="instruction">设置首数和公差，自动生成等差幻方数字，点击下方数字方块再点击格子填入</p>
+
+    <div class="input-area" style="gap: 8px; flex-wrap: wrap; align-items: center;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;background:#ff9800;color:white;font-size:16px;font-weight:bold;padding:6px 14px;border-radius:8px;box-shadow:0 2px 8px rgba(255,152,0,0.3);">首数</span>
+        <input type="number" id="firstNum" value="1" style="width:65px;padding:6px 10px;border:2px solid #ff9800;border-radius:8px;font-size:16px;font-weight:bold;outline:none;text-align:center;background:#fff3e0;color:#e65100;" />
+        <span style="display:inline-flex;align-items:center;justify-content:center;background:#ff9800;color:white;font-size:16px;font-weight:bold;padding:6px 14px;border-radius:8px;box-shadow:0 2px 8px rgba(255,152,0,0.3);">公差</span>
+        <input type="number" id="commonDiff" value="1" style="width:65px;padding:6px 10px;border:2px solid #ff9800;border-radius:8px;font-size:16px;font-weight:bold;outline:none;text-align:center;background:#fff3e0;color:#e65100;" />
+        <span style="display:inline-flex;align-items:center;justify-content:center;background:#ff9800;color:white;font-size:16px;font-weight:bold;padding:6px 14px;border-radius:8px;box-shadow:0 2px 8px rgba(255,152,0,0.3);">项数</span>
+        <span style="display:inline-flex;align-items:center;justify-content:center;background:#ff9800;color:white;font-size:20px;font-weight:bold;min-width:36px;padding:6px 14px;border-radius:8px;box-shadow:0 2px 8px rgba(255,152,0,0.3);">9</span>
+        <span style="display:inline-flex;align-items:center;justify-content:center;background:#ff9800;color:white;font-size:16px;font-weight:bold;padding:6px 14px;border-radius:8px;box-shadow:0 2px 8px rgba(255,152,0,0.3);">总和</span>
+        <span id="totalSumDisplay" style="display:inline-flex;align-items:center;justify-content:center;background:#ff9800;color:white;font-size:20px;font-weight:bold;min-width:60px;padding:6px 14px;border-radius:8px;box-shadow:0 2px 8px rgba(255,152,0,0.3);">0</span>
+        <button onclick="initGame()" style="padding:6px 20px;background:#1a237e;color:white;border:none;border-radius:8px;cursor:pointer;font-size:16px;font-weight:bold;box-shadow:0 2px 8px rgba(26,35,126,0.3);">生成幻方</button>
+    </div>
+    <div class="error-msg" id="errorMsg"></div>
+
+    <div class="game-wrapper" id="gameWrapper">
+        <div class="layout-grid">
+            <!-- 九宫格 -->
+            <div class="grid" id="grid"></div>
+
+            <!-- 右侧行和 (第5列，1-3行) -->
+            <div class="sum-item sum-row-0" id="sumRow0">-</div>
+            <div class="sum-item sum-row-1" id="sumRow1">-</div>
+            <div class="sum-item sum-row-2" id="sumRow2">-</div>
+
+            <!-- 左下：右上→左下对角线 (第1列，第4行) -->
+            <div class="sum-item sum-anti-diag" id="sumAntiDiag">-</div>
+
+            <!-- 底部列和 (第2-4列，第4行) -->
+            <div class="sum-item sum-col-0" id="sumCol0">-</div>
+            <div class="sum-item sum-col-1" id="sumCol1">-</div>
+            <div class="sum-item sum-col-2" id="sumCol2">-</div>
+
+            <!-- 右下：左上→右下对角线 (第5列，第4行) -->
+            <div class="sum-item sum-main-diag" id="sumMainDiag">-</div>
+        </div>
+
+        <div class="number-pool" id="numberPool"></div>
+        <p class="hint-text">💡 先点击橙色数字方块选中，再点击九宫格中的空格子填入；点击已填的格子可取出数字</p>
+        <div class="success-msg" id="successMsg">🎉 恭喜！所有行、列、对角线之和相等，幻方完成！</div>
+        <div class="btn-area">
+            <button class="btn-practice" onclick="resetGame()">🔄 练习</button>
+            <div class="red-seal">
+                <span>幽谷</span>
+                <span>醉翁</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 全局变量定义
+    let targetNumbers = [];
+    let gridData = Array(9).fill(null);
+    let selectedBlockIndex = null;
+
+    // 计算总和
+    function calcTotalSum(first, diff) {
+        return (first + first + diff * 8) * 4.5;
+    }
+
+    // 初始化游戏入口
+    function initGame() {
+        const first = parseInt(document.getElementById('firstNum').value);
+        const diff = parseInt(document.getElementById('commonDiff').value);
+        const errorMsg = document.getElementById('errorMsg');
+        
+        if (isNaN(first) || isNaN(diff)) {
+            errorMsg.textContent = "⚠️ 请输入有效的整数！";
+            return;
+        }
+        
+        // 生成等差数列 9 项
+        const nums = [];
+        for (let i = 0; i < 9; i++) {
+            nums.push(first + i * diff);
+        }
+        
+        const total = calcTotalSum(first, diff);
+        document.getElementById('totalSumDisplay').textContent = total;
+        
+        errorMsg.textContent = "";
+        targetNumbers = [...nums];
+        resetGame();
+    }
+
+    // 重置/开始游戏逻辑
+    function resetGame() {
+        if (targetNumbers.length === 0) return;
+        
+        gridData = Array(9).fill(null);
+        selectedBlockIndex = null;
+        
+        document.getElementById('gameWrapper').style.display = 'block';
+        document.getElementById('successMsg').style.display = 'none';
+        
+        renderGrid();
+        renderNumberPool();
+        updateSums();
+        createStars();
+    }
+
+    // 渲染九宫格
+    function renderGrid() {
+        const gridEl = document.getElementById('grid');
+        gridEl.querySelectorAll('.cell').forEach(el => el.remove());
+        
+        for (let i = 0; i < 9; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.index = i;
+            
+            if (gridData[i] !== null) {
+                cell.textContent = gridData[i];
+            }
+            
+            if (selectedBlockIndex !== null && gridData[i] === null) {
+                cell.classList.add('selected-target');
+            }
+            
+            cell.addEventListener('click', onCellClick);
+            gridEl.appendChild(cell);
+        }
+    }
+
+    // 渲染数字池
+    function renderNumberPool() {
+        const pool = document.getElementById('numberPool');
+        pool.innerHTML = '';
+        
+        targetNumbers.forEach((num, idx) => {
+            const block = document.createElement('div');
+            block.className = 'number-block';
+            block.textContent = num;
+            block.dataset.value = num;
+            block.dataset.poolIndex = idx;
+            
+            if (isBlockUsed(idx)) {
+                block.style.display = 'none';
+            }
+            
+            if (selectedBlockIndex === idx) {
+                block.classList.add('selected');
+            }
+            
+            block.addEventListener('click', function(e) { 
+                e.stopPropagation(); 
+                onBlockClick(idx); 
+            });
+            
+            pool.appendChild(block);
+        });
+    }
+
+    // 检查数字是否已被使用
+    function isBlockUsed(poolIdx) {
+        const val = targetNumbers[poolIdx];
+        let usedCountInPoolBefore = 0;
+        
+        // 计算在当前索引之前，有多少个相同的数字已经被标记为“使用中”（即不在池中显示）
+        // 这里简化逻辑：直接看 gridData 里用了多少个该数字，以及池中排在前面的相同数字是否已隐藏
+        // 更简单的逻辑：统计 gridData 中该数字出现的次数 vs 池中该数字及其之前相同数字的总数
+        
+        // 采用更稳健的逻辑：
+        // 1. 统计 gridData 中 val 出现了几次
+        const countInGrid = gridData.filter(v => v === val).length;
+        
+        // 2. 统计 targetNumbers 中，索引 <= poolIdx 且值为 val 的数量
+        let countInPoolUpToIdx = 0;
+        for(let i=0; i<=poolIdx; i++) {
+            if(targetNumbers[i] === val) countInPoolUpToIdx++;
+        }
+        
+        // 如果 grid 里的数量 >= 池子里截止到当前的数量，说明当前这个块应该被隐藏
+        return countInGrid >= countInPoolUpToIdx;
+    }
+
+    // 点击数字块
+    function onBlockClick(poolIdx) {
+        if (isBlockUsed(poolIdx)) return;
+        
+        if (selectedBlockIndex === poolIdx) {
+            selectedBlockIndex = null; // 取消选择
+        } else {
+            selectedBlockIndex = poolIdx;
+        }
+        
+        renderGrid();
+        renderNumberPool();
+    }
+
+    // 点击格子
+    function onCellClick(e) {
+        const idx = Number(e.currentTarget.dataset.index);
+        
+        if (gridData[idx] !== null) {
+            // 如果格子已有数字，取出数字（清空格子）
+            gridData[idx] = null;
+            selectedBlockIndex = null;
+            document.getElementById('successMsg').style.display = 'none';
+        } else if (selectedBlockIndex !== null) {
+            // 如果选中了数字且格子为空，填入数字
+            gridData[idx] = targetNumbers[selectedBlockIndex];
+            selectedBlockIndex = null;
+        }
+        
+        renderGrid();
+        renderNumberPool();
+        updateSums();
+        checkWin();
+    }
+
+    // 更新求和显示（填1个或2个数字时也显示部分和）
+    function getTargetTotal() {
+        const first = parseInt(document.getElementById('firstNum').value) || 1;
+        const diff = parseInt(document.getElementById('commonDiff').value) || 1;
+        return calcTotalSum(first, diff);
+    }
+    
+    function updateSums() {
+        const targetThird = getTargetTotal() / 3;
+        
+        // 行和 (右侧)
+        for (let r = 0; r < 3; r++) {
+            const vals = [gridData[r*3], gridData[r*3+1], gridData[r*3+2]];
+            const el = document.getElementById(`sumRow${r}`);
+            const filled = vals.filter(v => v !== null);
+            if (filled.length === 0) {
+                el.textContent = '-';
+                el.style.color = '#aaa';
+                el.style.fontWeight = 'normal';
+            } else {
+                const sum = filled.reduce((a,b) => a+b, 0);
+                el.textContent = sum;
+                if (filled.length === 3 && sum === targetThird) {
+                    el.style.color = '#e74c3c';
+                    el.style.fontWeight = 'bold';
+                } else {
+                    el.style.color = filled.length === 3 ? 'var(--sum-color)' : '#e67e22';
+                    el.style.fontWeight = 'normal';
+                }
+            }
+        }
+        
+        // 列和 (底部)
+        for (let c = 0; c < 3; c++) {
+            const vals = [gridData[c], gridData[c+3], gridData[c+6]];
+            const el = document.getElementById(`sumCol${c}`);
+            const filled = vals.filter(v => v !== null);
+            if (filled.length === 0) {
+                el.textContent = '-';
+                el.style.color = '#aaa';
+                el.style.fontWeight = 'normal';
+            } else {
+                const sum = filled.reduce((a,b) => a+b, 0);
+                el.textContent = sum;
+                if (filled.length === 3 && sum === targetThird) {
+                    el.style.color = '#e74c3c';
+                    el.style.fontWeight = 'bold';
+                } else {
+                    el.style.color = filled.length === 3 ? 'var(--sum-color)' : '#e67e22';
+                    el.style.fontWeight = 'normal';
+                }
+            }
+        }
+        
+        // 主对角线 (左上->右下): indices 0, 4, 8 -> 显示在右下 (sum-main-diag)
+        const mainDiag = [gridData[0], gridData[4], gridData[8]];
+        const mainEl = document.getElementById('sumMainDiag');
+        const mainFilled = mainDiag.filter(v => v !== null);
+        if (mainFilled.length === 0) {
+            mainEl.textContent = '-';
+            mainEl.style.color = '#aaa';
+            mainEl.style.fontWeight = 'normal';
+        } else {
+            const sum = mainFilled.reduce((a,b) => a+b, 0);
+            mainEl.textContent = sum;
+            if (mainFilled.length === 3 && sum === targetThird) {
+                mainEl.style.color = '#e74c3c';
+                mainEl.style.fontWeight = 'bold';
+            } else {
+                mainEl.style.color = mainFilled.length === 3 ? 'var(--sum-color)' : '#e67e22';
+                mainEl.style.fontWeight = 'normal';
+            }
+        }
+
+        // 反对角线 (右上->左下): indices 2, 4, 6 -> 显示在左下 (sum-anti-diag)
+        const antiDiag = [gridData[2], gridData[4], gridData[6]];
+        const antiEl = document.getElementById('sumAntiDiag');
+        const antiFilled = antiDiag.filter(v => v !== null);
+        if (antiFilled.length === 0) {
+            antiEl.textContent = '-';
+            antiEl.style.color = '#aaa';
+            antiEl.style.fontWeight = 'normal';
+        } else {
+            const sum = antiFilled.reduce((a,b) => a+b, 0);
+            antiEl.textContent = sum;
+            if (antiFilled.length === 3 && sum === targetThird) {
+                antiEl.style.color = '#e74c3c';
+                antiEl.style.fontWeight = 'bold';
+            } else {
+                antiEl.style.color = antiFilled.length === 3 ? 'var(--sum-color)' : '#e67e22';
+                antiEl.style.fontWeight = 'normal';
+            }
+        }
+    }
+
+    // 检查胜利条件
+    function checkWin() {
+        if (gridData.some(v => v === null)) return;
+        
+        const sums = [];
+        // 行
+        for (let r = 0; r < 3; r++) sums.push(gridData[r*3] + gridData[r*3+1] + gridData[r*3+2]);
+        // 列
+        for (let c = 0; c < 3; c++) sums.push(gridData[c] + gridData[c+3] + gridData[c+6]);
+        // 对角线
+        sums.push(gridData[0] + gridData[4] + gridData[8]);
+        sums.push(gridData[2] + gridData[4] + gridData[6]);
+        
+        const allEqual = sums.every(s => s === sums[0]);
+        document.getElementById('successMsg').style.display = allEqual ? 'block' : 'none';
+    }
+
+    // 创建背景星星特效
+    function createStars() {
+        const grid = document.getElementById('grid');
+        grid.querySelectorAll('.star').forEach(el => el.remove());
+        
+        for (let i = 0; i < 40; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 2.5 + 1;
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            star.style.left = Math.random() * 265 + 'px';
+            star.style.top = Math.random() * 265 + 'px';
+            star.style.setProperty('--dur', (0.4 + Math.random() * 0.8).toFixed(2) + 's');
+            star.style.setProperty('--delay', (Math.random() * 1.2).toFixed(2) + 's');
+            grid.appendChild(star);
+        }
+    }
+
+    // ===== Canvas 彗星（与动态对比.html一致） =====
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let shootingStars = [];
+    let animId;
+
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    class ShootingStar {
+        constructor() { this.active = false; this.opacity = 0; }
+        launch() {
+            this.x = Math.random() * canvas.width * 0.7;
+            this.y = Math.random() * canvas.height * 0.35;
+            this.len = Math.random() * 120 + 60;
+            this.speed = Math.random() * 8 + 6;
+            this.angle = Math.PI / 4 + (Math.random() - 0.5) * 0.3;
+            this.vx = Math.cos(this.angle) * this.speed;
+            this.vy = Math.sin(this.angle) * this.speed;
+            this.life = 1;
+            this.decay = Math.random() * 0.008 + 0.005;
+            this.active = true;
+            this.opacity = 1;
+            this.trailWidth = Math.random() * 1.5 + 1;
+        }
+        update() {
+            if (!this.active) return;
+            this.x += this.vx;
+            this.y += this.vy;
+            this.life -= this.decay;
+            this.opacity = Math.max(0, this.life);
+            if (this.life <= 0 || this.x > canvas.width + 50 || this.y > canvas.height + 50) {
+                this.active = false;
+            }
+        }
+        draw() {
+            if (!this.active || this.opacity < 0.01) return;
+            const tailX = this.x - Math.cos(this.angle) * this.len;
+            const tailY = this.y - Math.sin(this.angle) * this.len;
+            const grad = ctx.createLinearGradient(tailX, tailY, this.x, this.y);
+            grad.addColorStop(0, 'rgba(255,255,255,0)');
+            grad.addColorStop(0.6, 'rgba(255,180,50,' + (this.opacity * 0.4) + ')');
+            grad.addColorStop(1, 'rgba(255,215,0,' + this.opacity + ')');
+            ctx.beginPath();
+            ctx.moveTo(tailX, tailY);
+            ctx.lineTo(this.x, this.y);
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = this.trailWidth;
+            ctx.stroke();
+            const headGlow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, 6);
+            headGlow.addColorStop(0, 'rgba(255,215,0,' + this.opacity + ')');
+            headGlow.addColorStop(1, 'rgba(255,150,0,0)');
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 6, 0, Math.PI * 2);
+            ctx.fillStyle = headGlow;
+            ctx.fill();
+        }
+    }
+
+    for (let i = 0; i < 5; i++) shootingStars.push(new ShootingStar());
+
+    function drawShootingStars() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        shootingStars.forEach(function(s) { s.update(); s.draw(); });
+        if (Math.random() < 0.02) {
+            var inactive = null;
+            for (var i = 0; i < shootingStars.length; i++) {
+                if (!shootingStars[i].active) { inactive = shootingStars[i]; break; }
+            }
+            if (inactive) inactive.launch();
+        }
+        animId = requestAnimationFrame(drawShootingStars);
+    }
+    drawShootingStars();
+</script>
+</body>
+</html>
