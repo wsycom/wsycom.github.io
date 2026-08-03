@@ -7,99 +7,107 @@
     <style>
         /* 页面整体设置 */
         body {
-            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            background-color: #e8f5e9; /* 淡淡的绿色背景 */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            /* 极淡的绿色背景 (降低50%浓度) */
+            background-color: #f4fbf4; 
             margin: 0;
             padding: 40px 20px;
-            color: #333333; /* 统一的深灰色字体 */
-            display: flex;
-            justify-content: center;
+            color: #333333;
         }
 
         /* 内容容器 */
         .container {
             max-width: 700px;
-            width: 100%;
-            background-color: rgba(255, 255, 255, 0.6); /* 半透明白色底板，让文字更清晰 */
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin: 0 auto; /* 容器居中，但内部文字左对齐 */
         }
 
-        /* 橙黄色大标题 */
+        /* 标题样式 */
         h1 {
-            color: #ff9800; /* 橙黄色 */
-            text-align: center;
-            margin-top: 0;
-            margin-bottom: 20px;
-            font-size: 2.5em;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1); /* 加一点阴影增加立体感 */
+            /* 橙黄色字体 */
+            color: #ff9800; 
+            text-align: left; /* 左对齐 */
+            font-size: 28px;
+            margin-bottom: 10px;
+            border-bottom: none; /* 去掉下划线 */
         }
 
         /* 提示语样式 */
-        p.subtitle {
-            text-align: center;
-            font-size: 1.1em;
+        p.description {
+            text-align: left; /* 左对齐 */
+            color: #666666;
+            font-size: 15px;
             margin-bottom: 30px;
-            color: #333333;
         }
 
-        /* 列表样式 */
+        /* 链接列表样式 */
         ul {
-            list-style-type: none;
+            list-style: none;
             padding: 0;
+            margin: 0;
         }
 
         li {
-            background-color: #ffffff;
             margin-bottom: 15px;
+            /* 列表项背景：极淡的绿色，呼应大背景 */
+            background-color: #f0f8f0; 
             border-radius: 8px;
-            transition: transform 0.2s;
-            border-left: 5px solid #ff9800; /* 左侧橙色装饰条 */
+            /* 左侧橙色装饰条 */
+            border-left: 5px solid #ff9800; 
+            transition: all 0.2s ease;
         }
 
+        /* 鼠标悬停效果 */
         li:hover {
-            transform: translateX(5px); /* 鼠标悬停时轻微移动 */
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background-color: #e8f5e9; /* 悬停时稍微深一点点 */
+            transform: translateX(5px); /* 微微向右移动 */
         }
 
-        /* 链接样式 */
+        /* 链接文字样式 */
         a {
             display: block;
-            padding: 15px 20px;
             text-decoration: none;
-            color: #333333; /* 保持和提示语一样的颜色 */
+            color: #333333; /* 深灰色字体 */
+            padding: 15px 20px;
+            font-size: 16px;
             font-weight: 500;
-            font-size: 1.1em;
         }
-
-        a:hover {
-            color: #ff9800; /* 鼠标放上去变橙色 */
+        
+        /* 链接内的图标微调 */
+        .icon {
+            margin-right: 8px;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- 橙黄色标题 -->
+        <!-- 标题 -->
         <h1>我的教学课件库</h1>
-
+        
         <!-- 提示语 -->
-        <p class="subtitle">点击下方链接即可在线浏览课件：</p>
+        <p class="description">点击下方链接即可在线浏览课件：</p>
 
+        <!-- 链接列表 -->
         <ul>
-            <!-- target="_blank" 确保在新窗口打开 -->
             <li>
-                <a href="san-jie-huan-fang.html" target="_blank">🧩 三阶幻方填图教学课件</a>
+                <a href="san-jie-huan-fang.html" target="_blank">
+                    <span class="icon">🧩</span>三阶幻方填图教学课件
+                </a>
             </li>
             <li>
-                <a href="score-comparison.html" target="_blank">📊 四六年级各科平均分动态对比</a>
+                <a href="score-comparison.html" target="_blank">
+                    <span class="icon">📊</span>四六年级各科平均分动态对比
+                </a>
             </li>
             <li>
-                <a href="si-jie-huan-fang.html" target="_blank">🔢 四阶幻方填图教学课件</a>
+                <a href="si-jie-huan-fang.html" target="_blank">
+                    <span class="icon">🔢</span>四阶幻方填图教学课件
+                </a>
             </li>
             <li>
-                <a href="html-editor.html" target="_blank">🛠️ 随手改-HTML编辑器</a>
+                <a href="html-editor.html" target="_blank">
+                    <span class="icon">🛠️</span>随手改-HTML编辑器
+                </a>
             </li>
         </ul>
     </div>
