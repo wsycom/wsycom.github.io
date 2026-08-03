@@ -4,24 +4,31 @@
     <meta charset="UTF-8">
     <title>我的教学课件库</title>
     <style>
-        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f6f8fa; }
-        h1 { color: #24292e; border-bottom: 2px solid #eaecef; padding-bottom: 10px; }
-        ul { list-style-type: none; padding: 0; }
-        li { margin: 15px 0; }
-        a { text-decoration: none; color: #0366d6; font-size: 18px; display: block; padding: 10px; background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: 0.2s; }
-        a:hover { background-color: #eaf5ff; transform: translateX(5px); }
+        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background-color: #f6f8fa; color: #24292e; }
+        h1 { border-bottom: 2px solid #eaecef; padding-bottom: 10px; }
+        ul { list-style: none; padding: 0; }
+        li { margin: 15px 0; background: white; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        a { text-decoration: none; color: #0366d6; font-weight: bold; font-size: 18px; display: block; }
+        a:hover { text-decoration: underline; }
+        .footer { margin-top: 50px; font-size: 12px; color: #6a737d; text-align: center; }
     </style>
 </head>
 <body>
-    <h1>📚 我的教学课件库</h1>
-    <p>点击下方链接即可在线浏览课件：</p>
-    
+
+    <h1>📚 我的在线课件库</h1>
+    <p>点击下方链接即可查看对应的教学内容：</p>
+
     <ul>
-        <!-- 请确保 href 里的文件名和你实际上传的文件名完全一致 -->
+        <!-- 注意：这里的 href 必须和右边的文件名完全一致 -->
         <li><a href="san-jie-huan-fang.html">🧩 三阶幻方填图教学课件</a></li>
-        <li><a href="score-comparison.html">📊 四六年级各科平均分动态对比</a></li>
         <li><a href="si-jie-huan-fang.html">🔢 四阶幻方填图教学课件</a></li>
+        <li><a href="score-comparison.html">📊 四六年级各科平均分动态对比</a></li>
         <li><a href="html-editor.html">🛠️ 随手改-HTML编辑器</a></li>
     </ul>
+
+    <div class="footer">
+        Powered by GitHub Pages | wsycom.github.io
+    </div>
+
 </body>
 </html>
