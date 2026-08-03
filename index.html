@@ -2,32 +2,106 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的教学课件库</title>
     <style>
-        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background-color: #f6f8fa; color: #24292e; }
-        h1 { border-bottom: 2px solid #eaecef; padding-bottom: 10px; }
-        ul { list-style: none; padding: 0; }
-        li { margin: 15px 0; background: white; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        a { text-decoration: none; color: #0366d6; font-weight: bold; font-size: 18px; display: block; }
-        a:hover { text-decoration: underline; }
-        .footer { margin-top: 50px; font-size: 12px; color: #6a737d; text-align: center; }
+        /* 页面整体设置 */
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: #e8f5e9; /* 淡淡的绿色背景 */
+            margin: 0;
+            padding: 40px 20px;
+            color: #333333; /* 统一的深灰色字体 */
+            display: flex;
+            justify-content: center;
+        }
+
+        /* 内容容器 */
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.6); /* 半透明白色底板，让文字更清晰 */
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        /* 橙黄色大标题 */
+        h1 {
+            color: #ff9800; /* 橙黄色 */
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1); /* 加一点阴影增加立体感 */
+        }
+
+        /* 提示语样式 */
+        p.subtitle {
+            text-align: center;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+            color: #333333;
+        }
+
+        /* 列表样式 */
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            background-color: #ffffff;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            transition: transform 0.2s;
+            border-left: 5px solid #ff9800; /* 左侧橙色装饰条 */
+        }
+
+        li:hover {
+            transform: translateX(5px); /* 鼠标悬停时轻微移动 */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* 链接样式 */
+        a {
+            display: block;
+            padding: 15px 20px;
+            text-decoration: none;
+            color: #333333; /* 保持和提示语一样的颜色 */
+            font-weight: 500;
+            font-size: 1.1em;
+        }
+
+        a:hover {
+            color: #ff9800; /* 鼠标放上去变橙色 */
+        }
     </style>
 </head>
 <body>
 
-    <h1>📚 我的在线课件库</h1>
-    <p>点击下方链接即可查看对应的教学内容：</p>
+    <div class="container">
+        <!-- 橙黄色标题 -->
+        <h1>我的教学课件库</h1>
 
-    <ul>
-        <!-- 注意：这里的 href 必须和右边的文件名完全一致 -->
-        <li><a href="san-jie-huan-fang.html">🧩 三阶幻方填图教学课件</a></li>
-        <li><a href="si-jie-huan-fang.html">🔢 四阶幻方填图教学课件</a></li>
-        <li><a href="score-comparison.html">📊 四六年级各科平均分动态对比</a></li>
-        <li><a href="html-editor.html">🛠️ 随手改-HTML编辑器</a></li>
-    </ul>
+        <!-- 提示语 -->
+        <p class="subtitle">点击下方链接即可在线浏览课件：</p>
 
-    <div class="footer">
-        Powered by GitHub Pages | wsycom.github.io
+        <ul>
+            <!-- target="_blank" 确保在新窗口打开 -->
+            <li>
+                <a href="san-jie-huan-fang.html" target="_blank">🧩 三阶幻方填图教学课件</a>
+            </li>
+            <li>
+                <a href="score-comparison.html" target="_blank">📊 四六年级各科平均分动态对比</a>
+            </li>
+            <li>
+                <a href="si-jie-huan-fang.html" target="_blank">🔢 四阶幻方填图教学课件</a>
+            </li>
+            <li>
+                <a href="html-editor.html" target="_blank">🛠️ 随手改-HTML编辑器</a>
+            </li>
+        </ul>
     </div>
 
 </body>
