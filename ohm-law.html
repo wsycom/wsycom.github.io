@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>欧姆定律实验探究</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei','PingFang SC','Helvetica Neue',sans-serif;background:#edf2f7;color:#1a202c;min-height:100vh}
+header{text-align:center;padding:18px 20px 10px;background:linear-gradient(135deg,#1e3a5f,#2b6cb0);color:#fff}
+header h1{font-size:30px;letter-spacing:2px;font-weight:700}
+header p{font-size:16px;opacity:.85;margin-top:4px}
+.main{display:flex;gap:18px;padding:16px 20px;max-width:1160px;margin:0 auto}
+/* ===== 电路面板 ===== */
+.circuit-panel{flex:1;background:#111827;border-radius:14px;padding:12px;box-shadow:0 4px 20px rgba(0,0,0,.25);display:flex;flex-direction:column;align-items:center}
+.circuit-panel h2{color:#e2e8f0;font-size:16px;margin-bottom:6px;letter-spacing:1px}
+#circuitSvg{width:100%;max-width:620px}
+.wire{stroke:#cbd5e0;stroke-width:3;fill:none;stroke-linecap:round}
+.comp-label{fill:#e2e8f0;font-size:15px;font-weight:600;text-anchor:middle}
+.junction{fill:#cbd5e0}
+.electron{fill:#68d391;filter:url(#glow)}
+/* ===== 控制面板 ===== */
+.control-panel{width:370px;display:flex;flex-direction:column;gap:14px}
+.card{background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.values-card{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center}
+.val-box{padding:10px 6px;border-radius:10px;background:#f7fafc}
+.val-box .symbol{font-size:13px;color:#718096;margin-bottom:2px}
+.val-box .num{font-size:30px;font-weight:700;line-height:1.1}
+.val-box .unit{font-size:13px;color:#718096}
+.val-u .num{color:#2b6cb0}
+.val-r .num{color:#c53030}
+.val-i .num{color:#276749}
+.val-i{background:#f0fff4}
+.slider-group{margin-bottom:4px}
+.slider-group label{display:flex;justify-content:space-between;font-size:15px;font-weight:600;margin-bottom:6px}
+.slider-group label span{font-weight:700}
+.slider-group label .u-color{color:#2b6cb0}
+.slider-group label .r-color{color:#c53030}
+input[type=range]{-webkit-appearance:none;width:100%;height:10px;border-radius:5px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;cursor:pointer;border:3px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.25)}
+#sliderU{background:linear-gradient(90deg,#bee3f8,#2b6cb0)}
+#sliderU::-webkit-slider-thumb{background:#2b6cb0}
+#sliderR{background:linear-gradient(90deg,#fed7d7,#c53030)}
+#sliderR::-webkit-slider-thumb{background:#c53030}
+.btn-row{display:flex;gap:10px}
+.btn{flex:1;padding:12px 0;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;transition:all .15s}
+.btn-record{background:#2b6cb0;color:#fff}
+.btn-record:hover{background:#2c5282}
+.btn-clear{background:#e53e3e;color:#fff}
+.btn-clear:hover{background:#c53030}
+.formula-card{text-align:center;font-size:17px;line-height:2}
+.formula-card .big{font-size:26px;font-weight:700;color:#2b6cb0}
+/* ===== 底部区域 ===== */
+.bottom{display:flex;gap:18px;padding:0 20px 20px;max-width:1160px;margin:0 auto}
+.chart-panel{flex:1;background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.chart-panel h2{font-size:17px;margin-bottom:8px;color:#2d3748}
+#chartCanvas{width:100%;display:block}
+.data-panel{width:420px;background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 2px 10px rgba(0,0,0,.06);max-height:420px;overflow-y:auto}
+.data-panel h2{font-size:17px;margin-bottom:10px;color:#2d3748}
+table{width:100%;border-collapse:collapse;font-size:15px}
+thead th{background:#edf2f7;padding:8px 6px;text-align:center;font-weight:700;position:sticky;top:0}
+tbody td{padding:7px 6px;text-align:center;border-bottom:1px solid #e2e8f0}
+tbody tr:hover{background:#f7fafc}
+.btn-del{background:none;border:none;color:#e53e3e;cursor:pointer;font-size:16px;font-weight:700}
+.empty-hint{color:#a0aec0;text-align:center;padding:30px 0;font-size:15px}
+/* ===== 任务卡片 ===== */
+.tasks{display:flex;gap:18px;padding:0 20px 24px;max-width:1160px;margin:0 auto}
+.task-card{flex:1;background:#fff;border-radius:12px;padding:20px 24px;box-shadow:0 2px 10px rgba(0,0,0,.06);border-left:5px solid #2b6cb0}
+.task-card:last-child{border-left-color:#c53030}
+.task-card .badge{display:inline-block;background:#2b6cb0;color:#fff;border-radius:50%;width:30px;height:30px;line-height:30px;text-align:center;font-weight:700;font-size:15px;margin-right:8px}
+.task-card:last-child .badge{background:#c53030}
+.task-card h3{display:inline;font-size:17px}
+.task-card ol{margin:10px 0 0 22px;font-size:15px;line-height:2}
+footer{text-align:center;padding:10px;color:#a0aec0;font-size:13px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>欧姆定律 · 实验探究</h1>
+  <p>九年级物理 —— 探究电流、电压与电阻的关系</p>
+</header>
+
+<div class="main">
+
+  <!-- 电路图 -->
+  <div class="circuit-panel">
+    <h2>实验电路</h2>
+    <svg id="circuitSvg" viewBox="0 0 640 440">
+      <defs>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glowWarm">
+          <feGaussianBlur stdDeviation="4" result="b"/>
+          <feFlood flood-color="#f6ad55" flood-opacity=".45" result="c"/>
+          <feComposite in="c" in2="b" operator="in" result="d"/>
+          <feMerge><feMergeNode in="d"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="zigzagGlow">
+          <feGaussianBlur stdDeviation="2.5" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <clipPath id="resistorClip">
+          <rect x="574" y="198" width="52" height="84" rx="5"/>
+        </clipPath>
+      </defs>
+
+      <!-- 主电路导线 -->
+      <line class="wire" x1="75" y1="358" x2="196" y2="358"/>
+      <line class="wire" x1="284" y1="358" x2="380" y2="358"/>
+      <line class="wire" x1="380" y1="358" x2="380" y2="114"/>
+      <line class="wire" x1="380" y1="114" x2="405" y2="114"/>
+      <line class="wire" x1="535" y1="114" x2="540" y2="114"/>
+      <line class="wire" x1="540" y1="114" x2="600" y2="114"/>
+      <line class="wire" x1="600" y1="114" x2="600" y2="196"/>
+      <line class="wire" x1="600" y1="284" x2="600" y2="396"/>
+      <line class="wire" x1="600" y1="396" x2="75" y2="396"/>
+
+      <!-- 电压表连接导线 -->
+      <line class="wire" x1="600" y1="196" x2="600" y2="170"/>
+      <line class="wire" x1="600" y1="170" x2="130" y2="170"/>
+      <line class="wire" x1="130" y1="170" x2="130" y2="216"/>
+      <line class="wire" x1="600" y1="284" x2="600" y2="318"/>
+      <line class="wire" x1="600" y1="318" x2="130" y2="318"/>
+      <line class="wire" x1="130" y1="318" x2="130" y2="264"/>
+
+      <!-- 连接节点 -->
+      <circle class="junction" cx="600" cy="196" r="4"/>
+      <circle class="junction" cx="600" cy="284" r="4"/>
+
+      <!-- ====== 电源 ====== -->
+      <line x1="42" y1="378" x2="108" y2="378" stroke="#f6e05e" stroke-width="5" stroke-linecap="round"/>
+      <line x1="55" y1="342" x2="95" y2="342" stroke="#f6e05e" stroke-width="2.5" stroke-linecap="round"/>
+      <text x="115" y="348" fill="#f6e05e" font-size="16" font-weight="700">+</text>
+      <text x="115" y="386" fill="#a0aec0" font-size="16" font-weight="700">−</text>
+      <text class="comp-label" x="75" y="420" fill="#f6e05e">电源</text>
+
+      <!-- ====== 电流表 A ====== -->
+      <circle cx="240" cy="358" r="28" fill="#111827" stroke="#48bb78" stroke-width="2.5"/>
+      <text x="240" y="365" fill="#48bb78" font-size="20" font-weight="700" text-anchor="middle">A</text>
+      <text class="comp-label" x="240" y="420">电流表</text>
+
+      <!-- ====== 滑动变阻器 ====== -->
+      <rect x="405" y="98" width="130" height="32" rx="4" fill="#111827" stroke="#a78bfa" stroke-width="2"/>
+      <!-- 加粗加亮的锯齿纹 -->
+      <polyline id="rheostatZigzag"
+        points="412,114 420,98 430,130 440,98 450,130 460,98 470,130 480,98 490,130 500,98 510,130 520,98 528,114"
+        fill="none" stroke="#c4b5fd" stroke-width="3" stroke-linejoin="round" filter="url(#zigzagGlow)"/>
+      <!-- 滑片箭头 -->
+      <line x1="470" y1="130" x2="470" y2="150" stroke="#a78bfa" stroke-width="2.5"/>
+      <polygon points="462,150 478,150 470,139" fill="#a78bfa"/>
+      <text class="comp-label" x="470" y="80">滑动变阻器</text>
+
+      <!-- ====== 电阻 R ====== -->
+      <rect x="572" y="196" width="56" height="88" rx="6" fill="#111827" stroke="#fc8181" stroke-width="2.5" id="resistorBox"/>
+      <!-- 同色螺旋纹（正弦波模拟3D螺旋） -->
+      <g clip-path="url(#resistorClip)">
+        <path id="resistorSpiral" d="" fill="none" stroke="#fc8181" stroke-width="1.8" opacity=".6"/>
+        <path id="resistorSpiral2" d="" fill="none" stroke="#fc8181" stroke-width="1.2" opacity=".3"/>
+      </g>
+      <text x="600" y="248" fill="#fc8181" font-size="22" font-weight="700" text-anchor="middle" id="resistorLabel">R</text>
+      <text class="comp-label" x="600" y="184" fill="#fc8181">电阻</text>
+
+      <!-- ====== 电压表 V ====== -->
+      <circle cx="130" cy="240" r="28" fill="#111827" stroke="#63b3ed" stroke-width="2.5"/>
+      <text x="130" y="247" fill="#63b3ed" font-size="20" font-weight="700" text-anchor="middle">V</text>
+      <text class="comp-label" x="130" y="290">电压表</text>
+
+      <!-- 电流方向标注 -->
+      <text x="430" y="44" fill="#a0aec0" font-size="12" text-anchor="middle">电流方向 →</text>
+
+      <!-- 电子流动动画组 -->
+      <g id="electronGroup"></g>
+    </svg>
+  </div>
+
+  <!-- 控制面板 -->
+  <div class="control-panel">
+
+    <div class="card values-card">
+      <div class="val-box val-u"><div class="symbol">电压 U</div><div class="num" id="dispU">6.0</div><div class="unit">V</div></div>
+      <div class="val-box val-r"><div class="symbol">电阻 R</div><div class="num" id="dispR">10.0</div><div class="unit">Ω</div></div>
+      <div class="val-box val-i"><div class="symbol">电流 I</div><div class="num" id="dispI">0.60</div><div class="unit">A</div></div>
+    </div>
+
+    <div class="card">
+      <div class="slider-group">
+        <label>电压 U = <span class="u-color" id="lblU">6.0 V</span></label>
+        <input type="range" id="sliderU" min="1" max="36" step="0.5" value="6">
+      </div>
+      <div class="slider-group" style="margin-top:14px">
+        <label>电阻 R = <span class="r-color" id="lblR">10.0 Ω</span></label>
+        <input type="range" id="sliderR" min="2" max="50" step="1" value="10">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="btn-row">
+        <button class="btn btn-record" id="btnRecord">📋 记录这组数据</button>
+        <button class="btn btn-clear" id="btnClear">🗑 清空</button>
+      </div>
+    </div>
+
+    <div class="card formula-card">
+      <div>欧姆定律公式</div>
+      <div class="big">I = U / R</div>
+      <div style="font-size:14px;color:#718096;margin-top:2px">
+        电功率 P = U × I = <strong id="dispP" style="color:#d69e2e">3.60</strong> W
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ 图表 + 数据表 ============ -->
+<div class="bottom">
+
+  <div class="chart-panel">
+    <h2>I–U 关系图像</h2>
+    <canvas id="chartCanvas" width="960" height="680"></canvas>
+  </div>
+
+  <div class="data-panel" id="dataPanel">
+    <h2>实验数据记录</h2>
+    <div id="tableWrap">
+      <p class="empty-hint" id="emptyHint">暂无数据，请调整参数后点击"记录这组数据"</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ 探究任务 ============ -->
+<div class="tasks">
+  <div class="task-card">
+    <span class="badge">1</span><h3>探究：保持 R 不变，改变 U</h3>
+    <ol>
+      <li>将电阻 R 固定为一个值（如 10 Ω 或 20 Ω）</li>
+      <li>依次调节电压为 4 V、8 V、12 V、24 V、36 V</li>
+      <li>每次调节后点击"记录这组数据"</li>
+      <li>观察 I–U 图像，归纳 U 与 I 的关系</li>
+    </ol>
+    <p style="margin-top:8px;color:#718096;font-size:14px">
+      结论预判：R 不变时，I 与 U 成 <strong>正比</strong>
+    </p>
+  </div>
+  <div class="task-card">
+    <span class="badge">2</span><h3>探究：保持 U 不变，改变 R</h3>
+    <ol>
+      <li>将电压 U 固定为一个值（如 12 V 或 24 V）</li>
+      <li>依次调节电阻为 4 Ω、8 Ω、12 Ω、24 Ω、48 Ω</li>
+      <li>每次调节后点击"记录这组数据"</li>
+      <li>观察数据表，归纳 R 与 I 的关系</li>
+    </ol>
+    <p style="margin-top:8px;color:#718096;font-size:14px">
+      结论预判：U 不变时，I 与 R 成 <strong>反比</strong>
+    </p>
+  </div>
+</div>
+
+<footer>欧姆定律实验探究 · 互动课件</footer>
+
+<script>
+/* ========================================
+   欧姆定律实验探究 - 交互逻辑
+   ======================================== */
+
+// -------- 状态 --------
+let U = 6, R = 10;
+let records = [];
+let lastTs = 0;
+
+// -------- DOM --------
+const sliderU  = document.getElementById('sliderU');
+const sliderR  = document.getElementById('sliderR');
+const dispU    = document.getElementById('dispU');
+const dispR    = document.getElementById('dispR');
+const dispI    = document.getElementById('dispI');
+const dispP    = document.getElementById('dispP');
+const lblU     = document.getElementById('lblU');
+const lblR     = document.getElementById('lblR');
+const btnRecord= document.getElementById('btnRecord');
+const btnClear = document.getElementById('btnClear');
+const tableWrap= document.getElementById('tableWrap');
+const canvas   = document.getElementById('chartCanvas');
+const ctx      = canvas.getContext('2d');
+const resistorBox  = document.getElementById('resistorBox');
+const resistorSpiral  = document.getElementById('resistorSpiral');
+const resistorSpiral2 = document.getElementById('resistorSpiral2');
+
+// -------- 绘制电阻螺旋纹 --------
+function buildSpiralPath(cx, yTop, yBot, halfAmp, coils){
+  // 生成正弦波路径，模拟3D螺旋（只画前半弧）
+  let d = '';
+  const steps = coils * 40;
+  for(let i = 0; i <= steps; i++){
+    const t = i / steps;
+    const y = yBot - t * (yBot - yTop);
+    const x = cx + halfAmp * Math.sin(t * coils * 2 * Math.PI);
+    d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+  }
+  return d;
+}
+// 主螺旋（前弧，较亮）
+resistorSpiral.setAttribute('d', buildSpiralPath(600, 200, 280, 20, 4));
+// 辅助螺旋（后弧，较暗，偏移半周期）
+let d2 = '';
+const steps2 = 4 * 40;
+for(let i = 0; i <= steps2; i++){
+  const t = i / steps2;
+  const y = 280 - t * 80;
+  const x = 600 - 20 * Math.sin(t * 4 * 2 * Math.PI); // 反相位
+  d2 += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+}
+resistorSpiral2.setAttribute('d', d2);
+
+// -------- 电子流动路径（闭合回路）--------
+const pathPts = [
+  [75,396],[600,396],   // 底部：电源+ → 右下
+  [600,284],            // 右侧下行
+  [600,196],            // 电阻段（从下到上）
+  [600,114],            // 右上
+  [540,114],            // 变阻器右端
+  [470,114],            // 变阻器滑片
+  [405,114],            // 变阻器左端
+  [380,114],            // 左上
+  [380,358],            // 左侧下行
+  [284,358],            // 电流表右端
+  [196,358],            // 电流表左端
+  [75,358]              // 回到电源−
+];
+
+// 计算路径段长度
+const segLens = [];
+let totalLen = 0;
+for(let i = 0; i < pathPts.length - 1; i++){
+  const dx = pathPts[i+1][0] - pathPts[i][0];
+  const dy = pathPts[i+1][1] - pathPts[i][1];
+  const l = Math.sqrt(dx*dx + dy*dy);
+  segLens.push(l);
+  totalLen += l;
+}
+
+// 计算各关键段的累积距离（用于判断电子位于哪个元件）
+let cumDist = 0;
+const distAt = [0]; // distAt[i] = 到达第 i 个路径点的累积距离
+for(let i = 0; i < segLens.length; i++){
+  cumDist += segLens[i];
+  distAt.push(cumDist);
+}
+// 电阻段：distAt[2] ~ distAt[3]（索引2→3，从[600,284]到[600,196]）
+const RES_START = distAt[2], RES_END = distAt[3];
+// 变阻器段：distAt[4] ~ distAt[7]（索引4→5→6→7，从[540,114]到[380,114]）
+const RHEO_START = distAt[4], RHEO_END = distAt[7];
+
+// -------- 变阻器锯齿参数 --------
+const RHEO_X_LEFT = 412, RHEO_X_RIGHT = 528;
+const RHEO_AMP = 16; // 锯齿振幅（上下各16px）
+const RHEO_CYCLES = 6;
+
+// 电阻螺旋参数
+const RES_CX = 600, RES_Y_TOP = 200, RES_Y_BOT = 280;
+const RES_AMP = 20;  // 螺旋半径
+const RES_COILS = 4;
+
+// -------- 创建电子圆点 --------
+const NUM_DOTS = 16;
+const electronGroup = document.getElementById('electronGroup');
+const dots = [];
+for(let i = 0; i < NUM_DOTS; i++){
+  const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  c.setAttribute('r','5');
+  c.classList.add('electron');
+  electronGroup.appendChild(c);
+  dots.push({ el: c, dist: (i / NUM_DOTS) * totalLen });
+}
+
+// -------- 位置插值（含元件内路径偏移）--------
+function posAt(d){
+  d = ((d % totalLen) + totalLen) % totalLen;
+  let acc = 0;
+  for(let i = 0; i < segLens.length; i++){
+    if(acc + segLens[i] >= d){
+      const t = (d - acc) / segLens[i];
+      let x = pathPts[i][0] + t * (pathPts[i+1][0] - pathPts[i][0]);
+      let y = pathPts[i][1] + t * (pathPts[i+1][1] - pathPts[i][1]);
+
+      // === 变阻器区域：沿锯齿纹上下运动 ===
+      if(d >= RHEO_START && d <= RHEO_END){
+        const rheoProgress = (d - RHEO_START) / (RHEO_END - RHEO_START);
+        // 电子从右向左移动（x从540→380），用x位置计算锯齿相位
+        const frac = (RHEO_X_RIGHT - x) / (RHEO_X_RIGHT - RHEO_X_LEFT);
+        const clampedFrac = Math.max(0, Math.min(1, frac));
+        y += RHEO_AMP * Math.sin(clampedFrac * RHEO_CYCLES * 2 * Math.PI);
+      }
+
+      // === 电阻区域：沿螺旋纹旋转而上 ===
+      if(d >= RES_START && d <= RES_END){
+        const resProgress = (d - RES_START) / (RES_END - RES_START);
+        // 电子从下向上移动，螺旋相位随高度变化
+        const phase = resProgress * RES_COILS * 2 * Math.PI;
+        x += RES_AMP * Math.sin(phase);
+      }
+
+      return [x, y];
+    }
+    acc += segLens[i];
+  }
+  return pathPts[pathPts.length - 1];
+}
+
+// -------- 动画循环 --------
+function animate(ts){
+  const dt = lastTs ? (ts - lastTs) : 16;
+  lastTs = ts;
+  const I = U / R;
+  const speed = I * 90; // 像素/秒，电流越大越快
+  for(const dot of dots){
+    dot.dist = (dot.dist + speed * dt / 1000) % totalLen;
+    const p = posAt(dot.dist);
+    dot.el.setAttribute('cx', p[0].toFixed(1));
+    dot.el.setAttribute('cy', p[1].toFixed(1));
+  }
+  requestAnimationFrame(animate);
+}
+
+// -------- 更新显示 --------
+function update(){
+  const I = U / R;
+  const P = U * I;
+
+  dispU.textContent = U.toFixed(1);
+  dispR.textContent = R.toFixed(1);
+  dispI.textContent = I.toFixed(2);
+  dispP.textContent = P.toFixed(2);
+  lblU.textContent  = U.toFixed(1) + ' V';
+  lblR.textContent  = R.toFixed(1) + ' Ω';
+
+  // 电阻颜色随电流变化
+  const intensity = Math.min(I / 4, 1);
+  const cr = Math.round(252 + intensity * 3);
+  const cg = Math.round(129 - intensity * 80);
+  const cb = Math.round(129 - intensity * 100);
+  const resColor = `rgb(${cr},${cg},${cb})`;
+  resistorBox.setAttribute('stroke', resColor);
+  resistorSpiral.setAttribute('stroke', resColor);
+  resistorSpiral2.setAttribute('stroke', resColor);
+  if(I > 3){
+    resistorBox.setAttribute('filter','url(#glowWarm)');
+  } else {
+    resistorBox.removeAttribute('filter');
+  }
+
+  drawChart();
+}
+
+// -------- 绘制 I-U 图像 --------
+function drawChart(){
+  const W = canvas.width, H = canvas.height;
+  const ml = 80, mr = 30, mt = 25, mb = 60;
+  const cw = W - ml - mr, ch = H - mt - mb;
+
+  const maxU = 38;
+  const I_atMax = 36 / R;
+  const maxI = Math.max(Math.ceil(I_atMax * 1.3), 2);
+
+  const sx = v => ml + (v / maxU) * cw;
+  const sy = v => mt + ch - (v / maxI) * ch;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // 网格
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 1;
+  for(let u = 0; u <= 36; u += 6){
+    const x = sx(u);
+    ctx.beginPath(); ctx.moveTo(x, mt); ctx.lineTo(x, mt + ch); ctx.stroke();
+  }
+  let iStep = 1;
+  if(maxI <= 2) iStep = 0.5;
+  else if(maxI <= 5) iStep = 0.5;
+  else if(maxI <= 10) iStep = 1;
+  else if(maxI <= 20) iStep = 2;
+  else iStep = 5;
+  for(let i = 0; i <= maxI; i += iStep){
+    const y = sy(i);
+    ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(ml + cw, y); ctx.stroke();
+  }
+
+  // 坐标轴
+  ctx.strokeStyle = '#2d3748';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(ml, mt); ctx.lineTo(ml, mt + ch); ctx.lineTo(ml + cw, mt + ch); ctx.stroke();
+
+  // 轴标签
+  ctx.fillStyle = '#4a5568';
+  ctx.font = 'bold 22px Microsoft YaHei, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('U / V', ml + cw / 2, H - 8);
+  ctx.save();
+  ctx.translate(18, mt + ch / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('I / A', 0, 0);
+  ctx.restore();
+
+  // 刻度
+  ctx.font = '18px Microsoft YaHei, sans-serif';
+  ctx.fillStyle = '#718096';
+  ctx.textAlign = 'center';
+  for(let u = 0; u <= 36; u += 6){
+    ctx.fillText(u, sx(u), mt + ch + 28);
+  }
+  ctx.textAlign = 'right';
+  for(let i = 0; i <= maxI; i += iStep){
+    ctx.fillText(i.toFixed(i % 1 ? 1 : 0), ml - 10, sy(i) + 6);
+  }
+
+  // 理论线 I = U/R（虚线）
+  ctx.setLineDash([10, 6]);
+  ctx.strokeStyle = '#3182ce';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(sx(0), sy(0));
+  const endU = Math.min(36, maxI * R);
+  ctx.lineTo(sx(endU), sy(endU / R));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 理论线标注
+  ctx.fillStyle = '#3182ce';
+  ctx.font = 'bold 18px Microsoft YaHei, sans-serif';
+  ctx.textAlign = 'left';
+  const labelU = Math.min(endU * 0.65, 30);
+  ctx.fillText('I = U/' + R.toFixed(0), sx(labelU) + 6, sy(labelU / R) - 10);
+
+  // 当前工作点
+  const curX = sx(U), curY = sy(U / R);
+  if(curX >= ml && curX <= ml + cw && curY >= mt && curY <= mt + ch){
+    ctx.fillStyle = '#38a169';
+    ctx.beginPath(); ctx.arc(curX, curY, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+  }
+
+  // 记录的数据点
+  for(const rec of records){
+    const px = sx(rec.U), py = sy(rec.I);
+    if(px >= ml && px <= ml + cw && py >= mt && py <= mt + ch){
+      ctx.fillStyle = '#e53e3e';
+      ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    }
+  }
+
+  // 图例
+  const lx = ml + cw - 200, ly = mt + 18;
+  ctx.font = '16px Microsoft YaHei, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.setLineDash([6, 4]); ctx.strokeStyle = '#3182ce'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(lx, ly + 6); ctx.lineTo(lx + 30, ly + 6); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#3182ce'; ctx.fillText('理论 I=U/R', lx + 36, ly + 11);
+  ctx.fillStyle = '#38a169';
+  ctx.beginPath(); ctx.arc(lx + 15, ly + 28, 5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#38a169'; ctx.fillText('当前值', lx + 36, ly + 33);
+  if(records.length){
+    ctx.fillStyle = '#e53e3e';
+    ctx.beginPath(); ctx.arc(lx + 15, ly + 50, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#e53e3e'; ctx.fillText('记录数据', lx + 36, ly + 55);
+  }
+}
+
+// -------- 数据记录 --------
+function addRecord(){
+  const I = U / R;
+  records.push({ U: +U.toFixed(1), R: +R.toFixed(1), I: +I.toFixed(3) });
+  renderTable();
+  drawChart();
+}
+
+function removeRecord(idx){
+  records.splice(idx, 1);
+  renderTable();
+  drawChart();
+}
+
+function clearRecords(){
+  records = [];
+  renderTable();
+  drawChart();
+}
+
+function renderTable(){
+  if(!records.length){
+    tableWrap.innerHTML = '<p class="empty-hint">暂无数据，请调整参数后点击"记录这组数据"</p>';
+    return;
+  }
+  let html = '<table><thead><tr><th>序号</th><th>U (V)</th><th>R (Ω)</th><th>I (A)</th><th></th></tr></thead><tbody>';
+  records.forEach((r, i) => {
+    html += '<tr>' +
+      '<td>' + (i+1) + '</td>' +
+      '<td style="color:#2b6cb0;font-weight:600">' + r.U.toFixed(1) + '</td>' +
+      '<td style="color:#c53030;font-weight:600">' + r.R.toFixed(1) + '</td>' +
+      '<td style="color:#276749;font-weight:600">' + r.I.toFixed(2) + '</td>' +
+      '<td><button class="btn-del" onclick="removeRecord(' + i + ')">✕</button></td>' +
+      '</tr>';
+  });
+  html += '</tbody></table>';
+  tableWrap.innerHTML = html;
+}
+
+// -------- 事件绑定 --------
+sliderU.addEventListener('input', function(e){
+  U = parseFloat(e.target.value);
+  update();
+});
+sliderR.addEventListener('input', function(e){
+  R = parseFloat(e.target.value);
+  update();
+});
+btnRecord.addEventListener('click', addRecord);
+btnClear.addEventListener('click', clearRecords);
+
+// -------- 初始化 --------
+update();
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
